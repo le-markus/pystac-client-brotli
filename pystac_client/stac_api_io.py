@@ -221,7 +221,16 @@ class StacApiIO(DefaultStacIO):
         try:
             return resp.content.decode("utf-8")
         except Exception as err:
-            raise APIError(str(err))
+            err_str = str(err)
+            content_encoding = resp.headers.get("content-encoding", "").lower()
+            if content_encoding == "br":
+                err_str += (
+                    "\nThe response appears to be Brotli-compressed. "
+                    "(Content-Encoding: br)\n"
+                    "Installing either the 'brotli' package or 'brotlicffi' "
+                    "may resolve this issue.\n"
+                )
+            raise APIError(err_str)
 
     def write_text_to_href(self, href: str, *args: Any, **kwargs: Any) -> None:
         if _is_url(href):
