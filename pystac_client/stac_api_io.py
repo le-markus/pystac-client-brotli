@@ -22,6 +22,7 @@ from pystac.serialization import (
 from pystac.stac_io import DefaultStacIO
 from requests import Request, Session
 from requests.adapters import HTTPAdapter
+from requests.utils import default_headers
 from urllib3 import Retry
 
 import pystac_client
@@ -195,15 +196,20 @@ class StacApiIO(DefaultStacIO):
         Return:
             str: The decoded response from the endpoint
         """
+
+        # default to requests headers, e.g. Accept-Encoding
+        # relaying on .update enforces case insensitive overwrites
+        default_header = default_headers()
+        if headers:
+            for key, value in headers.items():
+                default_header.update(key, value)
+        headers = default_header
+
         if method == "POST":
-            request = Request(method=method, url=href, json=parameters)
+            request = Request(method=method, url=href, headers=headers, json=parameters)
         else:
             params = deepcopy(parameters) or {}
-            request = Request(method="GET", url=href, params=params)
-
-        # Preserve default headers, e.g. Accept-Encoding
-        if headers:
-            request.headers = request.headers | headers
+            request = Request(method="GET", url=href, headers=headers, params=params)
 
         try:
             modified = self._req_modifier(request) if self._req_modifier else None
