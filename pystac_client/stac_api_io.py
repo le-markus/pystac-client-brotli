@@ -196,10 +196,15 @@ class StacApiIO(DefaultStacIO):
             str: The decoded response from the endpoint
         """
         if method == "POST":
-            request = Request(method=method, url=href, headers=headers, json=parameters)
+            request = Request(method=method, url=href, json=parameters)
         else:
             params = deepcopy(parameters) or {}
-            request = Request(method="GET", url=href, headers=headers, params=params)
+            request = Request(method="GET", url=href, params=params)
+
+        # Preserve default headers, e.g. Accept-Encoding
+        if headers:
+            request.headers = request.headers | headers
+
         try:
             modified = self._req_modifier(request) if self._req_modifier else None
             prepped = self.session.prepare_request(modified or request)
